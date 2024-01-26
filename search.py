@@ -4,7 +4,7 @@
 # educational purposes provided that (1) you do not distribute or publish
 # solutions, (2) you retain this notice, and (3) you provide clear
 # attribution to UC Berkeley, including a link to http://ai.berkeley.edu.
-# 
+#
 # Attribution Information: The Pacman AI projects were developed at UC Berkeley.
 # The core projects and autograders were primarily created by John DeNero
 # (denero@cs.berkeley.edu) and Dan Klein (klein@cs.berkeley.edu).
@@ -18,6 +18,7 @@ Pacman agents (in searchAgents.py).
 """
 
 import util
+
 
 class SearchProblem:
     """
@@ -68,9 +69,11 @@ def tinyMazeSearch(problem):
     sequence of moves will be incorrect, so only use this for tinyMaze.
     """
     from game import Directions
+
     s = Directions.SOUTH
     w = Directions.WEST
-    return  [s, s, w, s, w, w, s, w]
+    return [s, s, w, s, w, w, s, w]
+
 
 def depthFirstSearch(problem):
     """
@@ -86,18 +89,60 @@ def depthFirstSearch(problem):
     print("Is the start a goal?", problem.isGoalState(problem.getStartState()))
     print("Start's successors:", problem.getSuccessors(problem.getStartState()))
     """
-    "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    stack = util.Stack()
+    visited = set()
+    stack.push((problem.getStartState(), []))
+
+    while not stack.isEmpty():
+        node, path = stack.pop()
+        if problem.isGoalState(node):
+            return path
+        if node not in visited:
+            visited.add(node)
+            for next_node, direction, _cost in problem.getSuccessors(node):
+                stack.push((next_node, path + [direction]))
+
 
 def breadthFirstSearch(problem):
     """Search the shallowest nodes in the search tree first."""
-    "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    queue = util.Queue()
+    visited = set()
+    queue.push((problem.getStartState(), []))
+
+    while not queue.isEmpty():
+        node, path = queue.pop()
+        if problem.isGoalState(node):
+            return path
+        if node not in visited:
+            visited.add(node)
+            for next_node, direction, _cost in problem.getSuccessors(node):
+                queue.push((next_node, path + [direction]))
+
 
 def uniformCostSearch(problem):
     """Search the node of least total cost first."""
-    "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    priority_queue = util.PriorityQueue()
+    visited = set()
+    priority_queue.push((problem.getStartState(), [], 0), 0)
+
+    while not priority_queue.isEmpty():
+        node, path, _cost = priority_queue.pop()
+        if problem.isGoalState(node):
+            return path
+        if node not in visited:
+            visited.add(node)
+            for next_node, direction, next_cost in problem.getSuccessors(node):
+                if next_node not in visited and next_node not in priority_queue.heap:
+                    priority_queue.push(
+                        (next_node, path + [direction], next_cost),
+                        problem.getCostOfActions(path + [direction]) + next_cost,
+                    )
+                else:
+                    priority_queue.update(
+                        (next_node, path + [direction], next_cost),
+                        problem.getCostOfActions(path + [direction]) + next_cost,
+                    )
+
 
 def nullHeuristic(state, problem=None):
     """
@@ -106,10 +151,35 @@ def nullHeuristic(state, problem=None):
     """
     return 0
 
+
 def aStarSearch(problem, heuristic=nullHeuristic):
     """Search the node that has the lowest combined cost and heuristic first."""
-    "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    priority_queue = util.PriorityQueue()
+    first = problem.getStartState()
+    visited = set()
+
+    priority_queue.push((problem.getStartState(), [], 0 + heuristic(first, problem)), 0)
+
+    while not priority_queue.isEmpty():
+        node, path, _cost = priority_queue.pop()
+        if problem.isGoalState(node):
+            return path
+
+        if node not in visited:
+            visited.add(node)
+            for next_node, direction, next_cost in problem.getSuccessors(node):
+                if next_node not in visited:
+                    priority_queue.push(
+                        (next_node, path + [direction], next_cost),
+                        problem.getCostOfActions(path + [direction])
+                        + heuristic(next_node, problem),
+                    )
+                else:
+                    priority_queue.update(
+                        (next_node, path + [direction], next_cost),
+                        problem.getCostOfActions(path + [direction])
+                        + heuristic(next_node, problem),
+                    )
 
 
 # Abbreviations

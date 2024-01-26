@@ -12,3 +12,11 @@ Artificial Intelligence - Project 1
 
 search.py: All search algorithms reside here.
 searchAgents.py: All search-based agents will reside here. (successor, goal function, etc.)
+
+
+Implemented search algorithms (in search.py):
+- Depth-first search
+- Breadth-first search
+- Uniform-cost search
+- A* search
+

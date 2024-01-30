@@ -312,7 +312,6 @@ class CornersProblem(search.SearchProblem):
             state, 'action' is the action required to get there, and 'stepCost'
             is the incremental cost of expanding to that successor
         """
-
         successors = []
         for action in [Directions.NORTH, Directions.SOUTH, Directions.EAST, Directions.WEST]:
             # Add a successor state to the successor list if the action is legal

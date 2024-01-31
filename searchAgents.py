@@ -371,8 +371,19 @@ def cornersHeuristic(state, problem):
     walls = problem.walls # These are the walls of the maze, as a Grid (game.py)
 
     "*** YOUR CODE HERE ***"
+    heuristic = 0
+    pos = state[0]
+    to_visit = list(state[1]).copy()
+    while to_visit:
+        distances = [util.manhattanDistance(pos, corner) for corner in to_visit]
+        nearest_distance = min(distances)
+        nearest_corner = to_visit[distances.index(nearest_distance)]
 
-    return 0 # Default to trivial solution
+        heuristic += nearest_distance
+        pos = nearest_corner
+        to_visit.remove(nearest_corner)
+
+    return heuristic
 
 class AStarCornersAgent(SearchAgent):
     "A SearchAgent for FoodSearchProblem using A* and your foodHeuristic"
@@ -466,7 +477,62 @@ def foodHeuristic(state, problem):
     """
     position, foodGrid = state
     "*** YOUR CODE HERE ***"
-    return 0
+    start_state = problem.startingGameState
+    heuristic = 0
+    foodList = foodGrid.asList()
+
+    if not foodList:
+        return heuristic
+
+
+    # 9551 Nodes expanded
+    #distances = [util.manhattanDistance(position, food) for food in foodList]
+    #return max(distances)
+
+    # 7161 Nodes expanded (with manhattanDistance)
+    # 410 Nodes expanded (with mazeDistance)
+    # mst = minimumSpanningTree(state, problem)
+    # return mst
+
+    # 719 Nodes expanded
+    distanceList = []
+    distanceFoodList = []
+
+    for food in foodList:
+        distanceList.append(mazeDistance(position, food, start_state))
+        for nextfood in foodList:
+            distanceFoodList.append(mazeDistance(food, nextfood, start_state))
+
+    if len(distanceList):
+        return min(distanceList) + max(distanceFoodList)
+    else:
+        return max(distanceFoodList)
+
+
+def minimumSpanningTree(state, problem):
+    from itertools import combinations
+    position, foodGrid = state
+    foodList = foodGrid.asList()
+    if len(foodList) == 0:
+        return 0
+
+    nodes = foodList + [position]
+    edges = [(mazeDistance(nodes[i], nodes[j], problem.startingGameState), i, j) for i, j in combinations(range(len(nodes)), 2)]
+    edges.sort()
+    parent = list(range(len(nodes)))
+
+    def find(x):
+        if parent[x] != x:
+            parent[x] = find(parent[x])
+        return parent[x]
+
+    mst_distance = 0
+    for dist, i, j in edges:
+        if find(i) != find(j):
+            mst_distance += dist
+            parent[find(i)] = find(j)
+
+    return mst_distance
 
 class ClosestDotSearchAgent(SearchAgent):
     "Search for all food using a sequence of searches"
@@ -497,7 +563,8 @@ class ClosestDotSearchAgent(SearchAgent):
         problem = AnyFoodSearchProblem(gameState)
 
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        return search.bfs(problem)
+
 
 class AnyFoodSearchProblem(PositionSearchProblem):
     """
@@ -533,7 +600,8 @@ class AnyFoodSearchProblem(PositionSearchProblem):
         x,y = state
 
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        return self.food[x][y]
+
 
 def mazeDistance(point1, point2, gameState):
     """

@@ -20,3 +20,10 @@ Implemented search algorithms (in search.py):
 - Uniform-cost search
 - A* search
 
+Implemented search-based agents (in searchAgents.py):
+- CornersProblem
+- cornersHeuristic
+- AStarFoodSearchAgent
+- ClosestDotSearchAgent
+- AnyFoodSearchProblem
+

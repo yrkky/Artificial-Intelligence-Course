@@ -4,7 +4,7 @@
 # educational purposes provided that (1) you do not distribute or publish
 # solutions, (2) you retain this notice, and (3) you provide clear
 # attribution to UC Berkeley, including a link to http://ai.berkeley.edu.
-# 
+#
 # Attribution Information: The Pacman AI projects were developed at UC Berkeley.
 # The core projects and autograders were primarily created by John DeNero
 # (denero@cs.berkeley.edu) and Dan Klein (klein@cs.berkeley.edu).
@@ -32,8 +32,8 @@ class PerceptronClassifier:
             self.weights[label] = util.Counter() # this is the data-structure you should use
 
     def setWeights(self, weights):
-        assert len(weights) == len(self.legalLabels);
-        self.weights = weights;
+        assert len(weights) == len(self.legalLabels)
+        self.weights = weights
 
     def train( self, trainingData, trainingLabels, validationData, validationLabels ):
         """
@@ -53,9 +53,25 @@ class PerceptronClassifier:
 
         for iteration in range(self.max_iterations):
             print("Starting iteration ", iteration, "...")
-            for i in range(len(trainingData)):
+            for i, train_data in enumerate(trainingData):
                 "*** YOUR CODE HERE ***"
-                util.raiseNotDefined()
+                scores = util.Counter()
+
+                for l in self.legalLabels:
+                    scores[l] = self.weights[l] * train_data
+
+                # Get the current training data and label
+                train_label = trainingLabels[i]
+
+                # Get the predicted label
+                predicted_label = scores.argMax()
+
+                # If the predicted label is not the same as the actual label, update the weights
+                if predicted_label != train_label:
+                    self.weights[train_label] += train_data
+                    self.weights[predicted_label] -= train_data
+
+
 
     def classify(self, data ):
         """

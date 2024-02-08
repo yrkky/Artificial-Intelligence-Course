@@ -503,36 +503,34 @@ def foodHeuristic(state, problem):
         for nextfood in foodList:
             distanceFoodList.append(mazeDistance(food, nextfood, start_state))
 
-    if len(distanceList):
-        return min(distanceList) + max(distanceFoodList)
-    else:
+    if not distanceList:
         return max(distanceFoodList)
+    return min(distanceList) + max(distanceFoodList)
 
-
-def minimumSpanningTree(state, problem):
-    from itertools import combinations
-    position, foodGrid = state
-    foodList = foodGrid.asList()
-    if len(foodList) == 0:
-        return 0
-
-    nodes = foodList + [position]
-    edges = [(mazeDistance(nodes[i], nodes[j], problem.startingGameState), i, j) for i, j in combinations(range(len(nodes)), 2)]
-    edges.sort()
-    parent = list(range(len(nodes)))
-
-    def find(x):
-        if parent[x] != x:
-            parent[x] = find(parent[x])
-        return parent[x]
-
-    mst_distance = 0
-    for dist, i, j in edges:
-        if find(i) != find(j):
-            mst_distance += dist
-            parent[find(i)] = find(j)
-
-    return mst_distance
+# def minimumSpanningTree(state, problem):
+#     from itertools import combinations
+#     position, foodGrid = state
+#     foodList = foodGrid.asList()
+#     if len(foodList) == 0:
+#         return 0
+#
+#     nodes = foodList + [position]
+#     edges = [(mazeDistance(nodes[i], nodes[j], problem.startingGameState), i, j) for i, j in combinations(range(len(nodes)), 2)]
+#     edges.sort()
+#     parent = list(range(len(nodes)))
+#
+#     def find(x):
+#         if parent[x] != x:
+#             parent[x] = find(parent[x])
+#         return parent[x]
+#
+#     mst_distance = 0
+#     for dist, i, j in edges:
+#         if find(i) != find(j):
+#             mst_distance += dist
+#             parent[find(i)] = find(j)
+#
+#     return mst_distance
 
 class ClosestDotSearchAgent(SearchAgent):
     "Search for all food using a sequence of searches"

@@ -14,7 +14,9 @@
 
 # Perceptron implementation
 import util
+
 PRINT = True
+
 
 class PerceptronClassifier:
     """
@@ -23,19 +25,22 @@ class PerceptronClassifier:
     Note that the variable 'datum' in this code refers to a counter of features
     (not to a raw samples.Datum).
     """
-    def __init__( self, legalLabels, max_iterations):
+
+    def __init__(self, legalLabels, max_iterations):
         self.legalLabels = legalLabels
         self.type = "perceptron"
         self.max_iterations = max_iterations
         self.weights = {}
         for label in legalLabels:
-            self.weights[label] = util.Counter() # this is the data-structure you should use
+            self.weights[label] = (
+                util.Counter()
+            )  # this is the data-structure you should use
 
     def setWeights(self, weights):
         assert len(weights) == len(self.legalLabels)
         self.weights = weights
 
-    def train( self, trainingData, trainingLabels, validationData, validationLabels ):
+    def train(self, trainingData, trainingLabels, validationData, validationLabels):
         """
         The training loop for the perceptron passes through the training data several
         times and updates the weight vector for each label based on classification errors.
@@ -47,7 +52,7 @@ class PerceptronClassifier:
         (and thus represents a vector a values).
         """
 
-        self.features = trainingData[0].keys() # could be useful later
+        self.features = trainingData[0].keys()  # could be useful later
         # DO NOT ZERO OUT YOUR WEIGHTS BEFORE STARTING TRAINING, OR
         # THE AUTOGRADER WILL LIKELY DEDUCT POINTS.
 
@@ -71,9 +76,7 @@ class PerceptronClassifier:
                     self.weights[train_label] += train_data
                     self.weights[predicted_label] -= train_data
 
-
-
-    def classify(self, data ):
+    def classify(self, data):
         """
         Classifies each datum as the label that most closely matches the prototype vector
         for that label.  See the project description for details.
@@ -87,7 +90,6 @@ class PerceptronClassifier:
                 vectors[l] = self.weights[l] * datum
             guesses.append(vectors.argMax())
         return guesses
-
 
     def findHighWeightFeatures(self, label):
         """

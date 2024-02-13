@@ -4,7 +4,7 @@
 # educational purposes provided that (1) you do not distribute or publish
 # solutions, (2) you retain this notice, and (3) you provide clear
 # attribution to UC Berkeley, including a link to http://ai.berkeley.edu.
-# 
+#
 # Attribution Information: The Pacman AI projects were developed at UC Berkeley.
 # The core projects and autograders were primarily created by John DeNero
 # (denero@cs.berkeley.edu) and Dan Klein (klein@cs.berkeley.edu).
@@ -22,6 +22,7 @@ import perceptron_pacman
 import mira
 import samples
 import sys
+import copy
 import util
 from pacman import GameState
 
@@ -73,6 +74,21 @@ def enhancedFeatureExtractorDigit(datum):
 
     ## DESCRIBE YOUR ENHANCED FEATURES HERE...
 
+    one_area: This feature is 1 if there is exactly one contiguous area of black pixels, 0 otherwise.
+    two_areas: This feature is 1 if there are exactly two contiguous areas of black pixels, 0 otherwise.
+    three_areas: This feature is 1 if there are three or more contiguous areas of black pixels, 0 otherwise.
+    most_on_top: This feature is 1 if the majority of the white pixels are above the center of the image, 0 otherwise.
+    most_on_right: This feature is 1 if the majority of the white pixels are to the right of the center of the image, 0 otherwise.
+    wide: This feature is 1 if the aspect ratio (width/height) of the bounding box of the digit is greater than or equal to 1.1, indicating a wide digit, 0 otherwise.
+    tall: This feature is 1 if the aspect ratio (width/height) of the bounding box of the digit is less than or equal to 0.9, indicating a tall digit, 0 otherwise.
+    white_large: This feature is 1 if the number of white pixels is greater than or equal to 130, indicating a large amount of white, 0 otherwise.
+    white_medium: This feature is 1 if the number of white pixels is between 90 and 130, indicating a medium amount of white, 0 otherwise.
+    white_small: This feature is 1 if the number of white pixels is less than or equal to 90, indicating a small amount of white, 0 otherwise.
+    black: This feature is 1 if the number of black pixels is greater than one-eighth of the total number of pixels, 0 otherwise.
+    black_large: This feature is 1 if the number of black pixels is greater than one-fourth of the total number of pixels, 0 otherwise.
+    small_width: This feature is 1 if the width of the bounding box of the digit is less than one-fourth of the image width, 0 otherwise.
+    small_height: This feature is 1 if the height of the bounding box of the digit is less than one-third of the image height, 0 otherwise.
+
     ##
     """
     features =  basicFeatureExtractorDigit(datum)
@@ -82,10 +98,78 @@ def enhancedFeatureExtractorDigit(datum):
     #features["oneExample"] = 1
 
     "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    pixels = datum.getPixels()
+    num_pixels = DIGIT_DATUM_WIDTH * DIGIT_DATUM_HEIGHT
+
+    white_pixels = 0
+    black_pixels = 0
+
+    leftmost, rightmost = DIGIT_DATUM_WIDTH, 0
+    topmost, bottommost = DIGIT_DATUM_HEIGHT, 0
+
+    center_x = DIGIT_DATUM_WIDTH // 2
+    center_y = DIGIT_DATUM_HEIGHT // 2
+
+    above_center = 0
+    right_of_center = 0
+
+    for i, row in enumerate(pixels):
+        for j, pixel in enumerate(row):
+            if pixel != 0:
+                white_pixels += 1
+                features[(i,j)] = 1
+                leftmost = min(leftmost, j)
+                rightmost = max(rightmost, j)
+                topmost = min(topmost, i)
+                bottommost = max(bottommost, i)
+                if i < center_y:
+                    above_center += 1
+                if j > center_x:
+                    right_of_center += 1
+            else:
+                black_pixels += 1
+
+    black_pixel_areas = area_counter(pixels)
+    width = rightmost - leftmost
+    height = bottommost - topmost
+    aspect_ratio = width / height
+
+    features['one_area'] = int(black_pixel_areas == 1)
+    features['two_areas'] = int(black_pixel_areas == 2)
+    features['three_areas'] = int(black_pixel_areas >= 3)
+    features['most_on_top'] = int(above_center / white_pixels >= 0.5)
+    features['most_on_right'] = int(right_of_center / white_pixels >= 0.5)
+    features['wide'] = int(aspect_ratio >= 1.1)
+    features['tall'] = int(aspect_ratio <= 0.9)
+    features['white_large'] = int(white_pixels >= 130)
+    features['white_medium'] = int(90 < white_pixels < 130)
+    features['white_small'] = int(white_pixels <= 90)
+    features['black'] = int(black_pixels > (num_pixels / 8))
+    features['black_large'] = int(black_pixels > (num_pixels / 4))
+    features['small_width'] = int(width < (DIGIT_DATUM_WIDTH / 4))
+    features['small_height'] = int(height < (DIGIT_DATUM_HEIGHT // 3))
 
     return features
 
+def area_counter(pixels) -> int:
+    def bfs(grid, i, j):
+        queue = [(i, j)]
+        while queue:
+            i, j = queue.pop(0)
+            if 0 <= i < len(grid) and 0 <= j < len(grid[0]) and grid[i][j] == 0:
+                grid[i][j] = '#'
+                queue.extend([(i-1, j), (i+1, j), (i, j-1), (i, j+1)])
+
+    def count_areas(grid):
+        count = 0
+        for i, row in enumerate(grid):
+            for j, pixel in enumerate(row):
+                if pixel == 0:
+                    bfs(grid, i, j)
+                    count += 1
+        return count
+    grid = copy.deepcopy(pixels)
+    return count_areas(grid)
 
 
 def basicFeatureExtractorPacman(state):
@@ -132,9 +216,44 @@ def enhancedPacmanFeatures(state, action):
     #successor = state.generateSuccessor(0, action)
 
     "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    next_state = state.generateSuccessor(0, action)
+
+    food_count = next_state.getNumFood() if next_state.getNumFood() else 1
+    capsules = len(next_state.getCapsules()) if next_state.getCapsules() else 1
+    is_win = next_state.isWin()
+    is_lose = next_state.isLose()
+    num_ghosts = len(next_state.getGhostPositions()) if next_state.getGhostPositions() else 1
+    scared_ghosts = [ghost.scaredTimer > 0 for ghost in next_state.getGhostStates()]
+    scared_ghosts_num = -1 if all(not ghost for ghost in scared_ghosts) else sum(scared_ghosts)
+    closest_ghost = distance_to_closest_ghost(next_state)
+    closest_food = distance_to_closest_food(next_state)
+    score = next_state.getScore()
+
+    features['food_count'] = 1.0 / food_count
+    features['capsules'] = 1.0 / capsules
+    features['is_win'] = is_win
+    features['is_lose'] = is_lose
+    features['num_ghosts'] = 1.0 / num_ghosts
+    features['scared_ghosts'] = 1.0 / scared_ghosts_num
+    features['closest_ghost'] = 1.0 / closest_ghost
+    features['closest_food'] = 1.0 / closest_food
+    features['score'] = score
+
     return features
 
+def distance_to_closest_food(state: GameState) -> int:
+    food = state.getFood().asList()
+    pacman = state.getPacmanPosition()
+    if not food:
+        return -float('inf')
+    distances = [util.manhattanDistance(pacman, food) for food in food]
+    return min(distances) if min(distances) else -float('inf')
+
+def distance_to_closest_ghost(state: GameState) -> int:
+    ghosts = state.getGhostPositions()
+    pacman = state.getPacmanPosition()
+    distances = [util.manhattanDistance(pacman, ghost) for ghost in ghosts]
+    return min(distances) if min(distances) else -float('inf')
 
 def contestFeatureExtractorDigit(datum):
     """
@@ -184,7 +303,84 @@ def analysis(classifier, guesses, testLabels, testData, rawTestData, printImage)
     #         print("Image: ")
     #         print(rawTestData[i])
     #         break
+    #     features = enhancedFeatureExtractorDigit(rawTestData[i])
+    #     print(f"{features}")
 
+    # plotter_function(classifier, guesses, testLabels, testData, rawTestData, printImage)
+
+
+def plotter_function(classifier, guesses, testLabels, testData, rawTestData, printImage):
+    black_pixel_areas_list = []
+    white_pixels_list = []
+    black_pixels_list = []
+    above_center_list = []
+    right_of_center_list = []
+    width_list = []
+    height_list = []
+    aspect_ratio_list = []
+    for k in range(len(guesses)):
+        # prediction = guesses[i]
+        # truth = testLabels[i]
+        pixels = rawTestData[k].getPixels()
+        num_pixels = DIGIT_DATUM_WIDTH * DIGIT_DATUM_HEIGHT
+        white_pixels = 0
+        black_pixels = 0
+        leftmost, rightmost = DIGIT_DATUM_WIDTH, 0
+        topmost, bottommost = DIGIT_DATUM_HEIGHT, 0
+        center_x = DIGIT_DATUM_WIDTH // 2
+        center_y = DIGIT_DATUM_HEIGHT // 2
+        above_center = 0
+        right_of_center = 0
+        for i, row in enumerate(pixels):
+            for j, pixel in enumerate(row):
+                if pixel != 0:
+                    white_pixels += 1
+                    leftmost = min(leftmost, j)
+                    rightmost = max(rightmost, j)
+                    topmost = min(topmost, i)
+                    bottommost = max(bottommost, i)
+                    if i < center_y:
+                        above_center += 1
+                    if j > center_x:
+                        right_of_center += 1
+                else:
+                    black_pixels += 1
+        black_pixel_areas = area_counter(pixels)
+        width = rightmost - leftmost
+        height = bottommost - topmost
+        aspect_ratio = width / height
+        black_pixel_areas_list.append(black_pixel_areas)
+        white_pixels_list.append(white_pixels)
+        black_pixels_list.append(black_pixels)
+        above_center_list.append(above_center)
+        right_of_center_list.append(right_of_center)
+        width_list.append(width)
+        height_list.append(height)
+        aspect_ratio_list.append(aspect_ratio)
+        # if (black_pixel_areas > 3):
+        #     print(rawTestData[k])
+        #     prediction = guesses[k]
+        #     truth = testLabels[k]
+        #     print(f"Prediction: {prediction} Truth: {truth}")
+    import matplotlib.pyplot as plt
+    plt.hist(white_pixels_list, bins=20, alpha=0.5, label='White Pixels')
+    plt.hist(black_pixels_list, bins=20, alpha=0.5, label='Black Pixels')
+    plt.legend(loc='upper right')
+    plt.show()
+    plt.hist(black_pixel_areas_list, bins=20, alpha=0.5, label='Black Pixel Areas')
+    plt.legend(loc='upper right')
+    plt.show()
+    plt.hist(above_center_list, bins=20, alpha=0.5, label='Above Center')
+    plt.hist(right_of_center_list, bins=20, alpha=0.5, label='Right of Center')
+    plt.legend(loc='upper right')
+    plt.show()
+    plt.hist(width_list, bins=20, alpha=0.5, label='Width')
+    plt.hist(height_list, bins=20, alpha=0.5, label='Height')
+    plt.legend(loc='upper right')
+    plt.show()
+    plt.hist(aspect_ratio_list, bins=20, alpha=0.5, label='Aspect Ratio')
+    plt.legend(loc='upper right')
+    plt.show()
 
 ## =====================
 ## You don't have to modify any code below.
@@ -372,7 +568,7 @@ def runClassifier(args, options):
     featureFunction = args['featureFunction']
     classifier = args['classifier']
     printImage = args['printImage']
-    
+
     # Load data
     numTraining = options.training
     numTest = options.test

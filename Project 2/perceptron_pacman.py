@@ -4,7 +4,7 @@
 # educational purposes provided that (1) you do not distribute or publish
 # solutions, (2) you retain this notice, and (3) you provide clear
 # attribution to UC Berkeley, including a link to http://ai.berkeley.edu.
-# 
+#
 # Attribution Information: The Pacman AI projects were developed at UC Berkeley.
 # The core projects and autograders were primarily created by John DeNero
 # (denero@cs.berkeley.edu) and Dan Klein (klein@cs.berkeley.edu).
@@ -28,7 +28,7 @@ class PerceptronClassifierPacman(PerceptronClassifier):
     def classify(self, data ):
         """
         Data contains a list of (datum, legal moves)
-        
+
         Datum is a Counter representing the features of each GameState.
         legalMoves is a list of legal moves for that GameState.
         """
@@ -50,4 +50,13 @@ class PerceptronClassifierPacman(PerceptronClassifier):
             print("Starting iteration ", iteration, "...")
             for i in range(len(trainingData)):
                 "*** YOUR CODE HERE ***"
-                util.raiseNotDefined()
+                scores = util.Counter()
+
+                for move in trainingData[i][1]:
+                    scores[move] = self.weights * trainingData[i][0][move]
+
+                guess = scores.argMax()
+
+                if guess != trainingLabels[i]:
+                    self.weights += trainingData[i][0][trainingLabels[i]]
+                    self.weights -= trainingData[i][0][guess]
